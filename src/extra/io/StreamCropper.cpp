@@ -54,6 +54,8 @@ namespace roofer::io {
 
    public:
     float min_ground_elevation = std::numeric_limits<float>::max();
+    // In order to store minimum point cloud elevation 
+    float min_total_elevation = std::numeric_limits<float>::max();
 
     PointsInPolygonsCollector(std::vector<LinearRing>& polygons,
                               std::vector<LinearRing>& buf_polygons,
@@ -155,6 +157,9 @@ namespace roofer::io {
           auto classification =
               point_cloud.attributes.get_if<int>("classification");
 
+          // store min total elevation
+          min_total_elevation = std::min(min_total_elevation, point[2]);
+          
           if (point_class == ground_class) {
             min_ground_elevation = std::min(min_ground_elevation, point[2]);
             z_ground[poly_i].push_back(point[2]);
@@ -312,7 +317,11 @@ namespace roofer::io {
       // pts) std::cout <<"Computing the average ground elevation per
       // polygon..." << std::endl;
       for (size_t i = 0; i < z_ground.size(); ++i) {
-        float ground_ele = min_ground_elevation;
+        //float ground_ele = min_ground_elevation;
+        // Use min total elevation by default or min_ground_elevation if if exists
+        float ground_ele = min_total_elevation;
+        if (min_ground_elevation < std::numeric_limits<float>::max())
+          float ground_ele = min_ground_elevation;
         if (z_ground[i].size() != 0) {
           std::sort(z_ground[i].begin(), z_ground[i].end(),
                     [](auto& z1, auto& z2) { return z1 < z2; });
